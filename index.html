@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mein Quiz-Spiel</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="quiz-container">
+        <div class="header">
+            <div class="score">Punkte: <span id="score">0</span></div>
+            <div class="timer">Zeit: <span id="time">300</span>s</div>
+        </div>
+
+        <div class="question-box">
+            <h2 id="question">Lade Frage...</h2>
+        </div>
+
+        <div class="answers-box">
+            <button class="answer-btn" onclick="checkAnswer(0)"></button>
+            <button class="answer-btn" onclick="checkAnswer(1)"></button>
+            <button class="answer-btn" onclick="checkAnswer(2)"></button>
+            <button class="answer-btn" onclick="checkAnswer(3)"></button>
+        </div>
+
+        <button id="next-btn" class="hidden" onclick="nextQuestion()">Nächste Frage</button>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
