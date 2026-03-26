@@ -23,6 +23,85 @@ let timeLeft = TIMER_SECONDS;
 let answered = false;
 let playerName = '';
 let currentShuffledAnswers = []; // Speichert die gemischten Antworten der aktuellen Frage
+let gameMode = 'random';       // Aktueller Spielmodus
+
+// ---------- Sound Manager (Web Audio API) ----------
+class SoundManager {
+    constructor() {
+        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+
+    play(type) {
+        if (this.ctx.state === 'suspended') {
+            this.ctx.resume();
+        }
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        const now = this.ctx.currentTime;
+
+        switch (type) {
+            case 'correct':
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(523.25, now); // C5
+                osc.frequency.exponentialRampToValueAtTime(880, now + 0.1); // A5
+                gain.gain.setValueAtTime(0, now);
+                gain.gain.linearRampToValueAtTime(0.2, now + 0.05);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                osc.start(now);
+                osc.stop(now + 0.3);
+                break;
+            case 'wrong':
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(220, now); // A3
+                osc.frequency.linearRampToValueAtTime(110, now + 0.2); // A2
+                gain.gain.setValueAtTime(0, now);
+                gain.gain.linearRampToValueAtTime(0.15, now + 0.05);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+                osc.start(now);
+                osc.stop(now + 0.4);
+                break;
+            case 'timeout':
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(150, now);
+                gain.gain.setValueAtTime(0, now);
+                gain.gain.linearRampToValueAtTime(0.1, now + 0.05);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+                osc.start(now);
+                osc.stop(now + 0.5);
+                break;
+            case 'click':
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(800, now);
+                gain.gain.setValueAtTime(0, now);
+                gain.gain.linearRampToValueAtTime(0.1, now + 0.01);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                osc.start(now);
+                osc.stop(now + 0.1);
+                break;
+            case 'gameover':
+                osc.type = 'sine';
+                [440, 349, 293, 220].forEach((f, i) => {
+                    const start = now + i * 0.15;
+                    const o = this.ctx.createOscillator();
+                    const g = this.ctx.createGain();
+                    o.type = 'sine';
+                    o.frequency.setValueAtTime(f, start);
+                    o.connect(g);
+                    g.connect(this.ctx.destination);
+                    g.gain.setValueAtTime(0, start);
+                    g.gain.linearRampToValueAtTime(0.1, start + 0.05);
+                    g.gain.exponentialRampToValueAtTime(0.01, start + 0.3);
+                    o.start(start);
+                    o.stop(start + 0.3);
+                });
+                break;
+        }
+    }
+}
+const sounds = new SoundManager();
 
 // ---------- DOM-Referenzen ----------
 const screenStart = document.getElementById('screen-start');
@@ -63,21 +142,11 @@ function shuffle(arr) {
     return a;
 }
 
-/** Kategorie anhand des Frageninhalts bestimmen (einfaches Mapping) */
+/** Kategorie anhand der neuen category-Property bestimmen */
 function getCategory(index) {
-    const cats = [
-        { label: '🏛️ Geschichte', until: 10 },
-        { label: '🔬 Naturwissenschaft', until: 20 },
-        { label: '🎨 Kunst & Kultur', until: 30 },
-        { label: '🍕 Essen & Trinken', until: 40 },
-        { label: '⚽ Sport', until: 50 },
-    ];
-    // Originalindex in QUESTIONS (vor dem Shuffle) nutzen wir nicht –
-    // zeige die Kategorie basierend auf der Frage selbst:
-    // Wir ordnen einfach der Originalreihenfolge zu.
-    const origIndex = QUESTIONS.indexOf(questions[index]);
-    for (const cat of cats) {
-        if (origIndex < cat.until) return cat.label;
+    const q = questions[index];
+    if (q && q.category) {
+        return q.category;
     }
     return '❓ Allgemein';
 }
@@ -155,7 +224,9 @@ function updateTimerUI() {
 
 // ---------- Spielablauf ----------
 
-function startGame() {
+function startGame(mode = 'random') {
+    sounds.play('click');
+    gameMode = mode;
     playerName = nameInput.value.trim();
     if (!playerName) {
         alert('Bitte gib deinen Namen ein, um zu spielen!');
@@ -164,7 +235,12 @@ function startGame() {
     }
 
     // Spielstand zurücksetzen
-    questions = shuffle(QUESTIONS);
+    if (gameMode === 'random') {
+        questions = shuffle(QUESTIONS);
+    } else {
+        // Falls später andere Modi kommen
+        questions = shuffle(QUESTIONS);
+    }
     currentIndex = 0;
     score = 0;
     lives = 3;
@@ -224,6 +300,7 @@ function checkAnswer(selectedIndex) {
 
     if (currentShuffledAnswers[selectedIndex].isCorrect) {
         // ✅ RICHTIG
+        sounds.play('correct');
         answerBtns[selectedIndex].classList.add('correct');
         score++;
         countCorrect++;
@@ -234,6 +311,7 @@ function checkAnswer(selectedIndex) {
         // Auto-Weiter entfernt auf User-Wunsch
     } else {
         // ❌ FALSCH – Leben abziehen
+        sounds.play('wrong');
         answerBtns[selectedIndex].classList.add('wrong');
         answerBtns[correctIndex].classList.add('correct');
         lives--;
@@ -254,6 +332,7 @@ function checkAnswer(selectedIndex) {
 function handleTimeout() {
     if (answered) return;
     answered = true;
+    sounds.play('timeout');
 
     const correctIndex = currentShuffledAnswers.findIndex(a => a.isCorrect);
     answerBtns[correctIndex].classList.add('correct');
@@ -285,6 +364,7 @@ function showFeedback() {
 }
 
 function nextQuestion() {
+    sounds.play('click');
     if (lives <= 0) return; // Sicherheitshalber abbrechen
     currentIndex++;
     if (currentIndex < questions.length) {
@@ -298,6 +378,7 @@ function nextQuestion() {
 
 function showLoseScreen() {
     stopTimer();
+    sounds.play('gameover');
     document.getElementById('lose-score').textContent = score;
     showScreen(screenLose);
     uploadScore(score);
@@ -380,6 +461,7 @@ async function uploadScore(finalScore) {
 }
 
 async function showHighscores() {
+    sounds.play('click');
     showScreen(screenHighscore);
     highscoreContainer.innerHTML = '<div class="loader-spinner">Lade Top 10...</div>';
 
