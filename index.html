@@ -4,31 +4,165 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mein Quiz-Spiel</title>
+    <title>QuizZ Pro</title>
+    <meta name="description"
+        content="Ein modernes Quizz-Spiel – teste dein Wissen in Geschichte, Wissenschaft, Kultur, Sport und mehr!">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-    <div class="quiz-container">
-        <div class="header">
-            <div class="score">Punkte: <span id="score">0</span></div>
-            <div class="timer">Zeit: <span id="time">300</span>s</div>
-        </div>
 
-        <div class="question-box">
-            <h2 id="question">Lade Frage...</h2>
-        </div>
-
-        <div class="answers-box">
-            <button class="answer-btn" onclick="checkAnswer(0)"></button>
-            <button class="answer-btn" onclick="checkAnswer(1)"></button>
-            <button class="answer-btn" onclick="checkAnswer(2)"></button>
-            <button class="answer-btn" onclick="checkAnswer(3)"></button>
-        </div>
-
-        <button id="next-btn" class="hidden" onclick="nextQuestion()">Nächste Frage</button>
+    <!-- Animierter Hintergrund -->
+    <div class="bg-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
     </div>
 
+    <!-- START-BILDSCHIRM -->
+    <div id="screen-start" class="screen active">
+        <div class="card start-card">
+            <div class="logo">🧠</div>
+            <h1>Quizz <span class="gradient-text">Pro</span></h1>
+            <p class="subtitle">50 Fragen aus 5 Kategorien.<br>Teste dein Wissen!</p>
+            <div class="rules">
+                <div class="rule">✅ Richtige Antwort <strong>+1 Punkt</strong></div>
+                <div class="rule">❌ Falsche Antwort <strong>−1 Leben</strong></div>
+                <div class="rule">⏱️ Zeitablauf (10 Sek.) <strong>−1 Leben</strong></div>
+            </div>
+
+            <div class="start-form">
+                <input type="text" id="player-name" placeholder="Dein Name..." maxlength="15">
+                <div class="start-actions">
+                    <button id="btn-start" class="btn-primary" onclick="startGame()">
+                        Spiel starten
+                        <span class="btn-arrow">→</span>
+                    </button>
+                    <button id="btn-highscore" class="btn-secondary" onclick="showHighscores()">
+                        🏆 Highscore
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- SPIEL-BILDSCHIRM -->
+    <div id="screen-game" class="screen">
+        <div class="game-wrapper">
+
+            <!-- Header: Leben + Timer + Score/Fortschritt -->
+            <div class="game-header">
+                <button class="stat-box lives-btn-wrapper" onclick="addLivesPrompt()">
+                    <span class="stat-label">Leben</span>
+                    <span class="stat-value lives-stat" id="lives-display">❤️ ❤️ ❤️</span>
+                </button>
+
+                <div id="timer-ring-container">
+                    <svg class="timer-svg" viewBox="0 0 60 60">
+                        <circle class="timer-track" cx="30" cy="30" r="26" />
+                        <circle class="timer-progress" id="timer-circle" cx="30" cy="30" r="26" />
+                    </svg>
+                    <span id="timer-text" class="timer-text">10</span>
+                </div>
+
+                <div class="stat-box">
+                    <span class="stat-label">Punkte</span>
+                    <span class="stat-value" id="score">0</span>
+                </div>
+            </div>
+
+
+            <!-- Fragen-Fortschritt -->
+            <div class="question-meta">
+                Beantwortet: <span id="answered-count">0</span>
+            </div>
+            <!-- Fragekarte -->
+            <div class="question-card" id="question-card">
+                <div class="category-badge" id="category-badge">Geschichte</div>
+                <h2 id="question-text">Lade Frage...</h2>
+            </div>
+
+            <!-- Antwort-Buttons -->
+            <div class="answers-grid" id="answers-grid">
+                <button class="answer-btn" id="btn-a0" onclick="checkAnswer(0)"></button>
+                <button class="answer-btn" id="btn-a1" onclick="checkAnswer(1)"></button>
+                <button class="answer-btn" id="btn-a2" onclick="checkAnswer(2)"></button>
+                <button class="answer-btn" id="btn-a3" onclick="checkAnswer(3)"></button>
+            </div>
+
+            <!-- Erklärung nach Antwort -->
+            <div class="feedback-bar" id="feedback-bar">
+                <span id="feedback-text"></span>
+                <button class="btn-next" id="btn-next" onclick="nextQuestion()">Weiter →</button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ERGEBNIS-BILDSCHIRM -->
+    <div id="screen-result" class="screen">
+        <div class="card result-card">
+            <div class="result-emoji" id="result-emoji">🏆</div>
+            <h2 id="result-title">Quiz beendet!</h2>
+            <p id="result-subtitle"></p>
+            <div class="result-score-box">
+                <span class="result-score-label">Dein Ergebnis</span>
+                <span class="result-score-value" id="result-score">0</span>
+            </div>
+            <div class="result-stats" id="result-stats"></div>
+            <div class="result-actions">
+                <button class="btn-primary" onclick="restartGame()">
+                    Nochmal spielen
+                    <span class="btn-arrow">↺</span>
+                </button>
+                <button class="btn-secondary" onclick="showHighscores()">
+                    🏆 Highscore Liste
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- HIGHSCORE-BILDSCHIRM -->
+    <div id="screen-highscore" class="screen">
+        <div class="card highscore-card">
+            <div class="logo">🏆</div>
+            <h2>Top 10 Highscores</h2>
+            <div id="highscore-list" class="highscore-list">
+                <div class="loader-spinner">Lade Daten...</div>
+            </div>
+            <button class="btn-primary" onclick="showScreen(screenStart)">
+                ← Zurück
+            </button>
+        </div>
+    </div>
+
+    <!-- LOSE-BILDSCHIRM -->
+    <div id="screen-lose" class="screen">
+        <div class="card lose-card">
+            <div class="result-emoji">💀</div>
+            <h2 class="text-wrong">Du hast verloren!</h2>
+            <p>Du hast kein Leben mehr. Das Spiel ist vorbei.</p>
+            <div class="result-score-box">
+                <span class="result-score-label">Finaler Score</span>
+                <span class="result-score-value" id="lose-score">-1</span>
+            </div>
+            <div class="result-actions">
+                <button class="btn-primary" onclick="restartGame()">
+                    Nochmal versuchen ↺
+                </button>
+                <button class="btn-secondary" onclick="showHighscores()">
+                    🏆 Highscore Liste
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <script src="questions.js"></script>
     <script src="script.js"></script>
 </body>
 
