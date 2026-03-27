@@ -24,6 +24,7 @@ let answered = false;
 let playerName = '';
 let currentShuffledAnswers = []; // Speichert die gemischten Antworten der aktuellen Frage
 let gameMode = 'random';       // Aktueller Spielmodus
+let currentCategory = '';      // Aktuell gewählte Kategorie
 
 // ---------- Sound Manager (Web Audio API) ----------
 class SoundManager {
@@ -109,6 +110,7 @@ const screenGame = document.getElementById('screen-game');
 const screenResult = document.getElementById('screen-result');
 const screenHighscore = document.getElementById('screen-highscore');
 const screenLose = document.getElementById('screen-lose');
+const screenCategorySelection = document.getElementById('screen-category-selection');
 
 const nameInput = document.getElementById('player-name');
 const highscoreContainer = document.getElementById('highscore-list');
@@ -128,7 +130,7 @@ const feedbackText = document.getElementById('feedback-text');
 
 /** Blendet alle Screens aus, aktiviert den gewünschten */
 function showScreen(screen) {
-    [screenStart, screenGame, screenResult, screenHighscore, screenLose].forEach(s => s.classList.remove('active'));
+    [screenStart, screenGame, screenResult, screenHighscore, screenLose, screenCategorySelection].forEach(s => s.classList.remove('active'));
     screen.classList.add('active');
 }
 
@@ -224,9 +226,27 @@ function updateTimerUI() {
 
 // ---------- Spielablauf ----------
 
-function startGame(mode = 'random') {
+function showCategorySelection() {
+    playerName = nameInput.value.trim();
+    if (!playerName) {
+        alert('Bitte gib deinen Namen ein, um zu spielen!');
+        nameInput.focus();
+        return;
+    }
+    sounds.play('click');
+    showScreen(screenCategorySelection);
+}
+
+function selectCategory(category) {
+    currentCategory = category;
+    startGame('category', category);
+}
+
+function startGame(mode = 'random', category = '') {
     sounds.play('click');
     gameMode = mode;
+    currentCategory = category;
+
     playerName = nameInput.value.trim();
     if (!playerName) {
         alert('Bitte gib deinen Namen ein, um zu spielen!');
@@ -237,8 +257,9 @@ function startGame(mode = 'random') {
     // Spielstand zurücksetzen
     if (gameMode === 'random') {
         questions = shuffle(QUESTIONS);
+    } else if (gameMode === 'category') {
+        questions = shuffle(QUESTIONS.filter(q => q.category === category));
     } else {
-        // Falls später andere Modi kommen
         questions = shuffle(QUESTIONS);
     }
     currentIndex = 0;
@@ -440,7 +461,12 @@ async function uploadScore(finalScore) {
         let list = Array.isArray(getResult.record) ? getResult.record : [];
 
         // 2. Neuen Score hinzufügen
-        list.push({ name: playerName, score: finalScore });
+        list.push({
+            name: playerName,
+            score: finalScore,
+            mode: gameMode,
+            category: currentCategory
+        });
 
         // 3. Sortieren und Top 10 behalten
         list.sort((a, b) => b.score - a.score);
@@ -476,13 +502,22 @@ async function showHighscores() {
             return;
         }
 
-        let html = '<table class="hs-table"><thead><tr><th>#</th><th>Spieler</th><th>Punkte</th></tr></thead><tbody>';
+        let html = '<table class="hs-table"><thead><tr><th>#</th><th>Spieler</th><th>Punkte</th><th>Modus</th></tr></thead><tbody>';
         list.forEach((entry, idx) => {
             const isCurrent = (entry.name === playerName && idx < 10); // Simpler Highlight-Check
+
+            let modeDisplay = '';
+            if (entry.mode === 'random') {
+                modeDisplay = '🎲 Zufall';
+            } else if (entry.mode === 'category') {
+                modeDisplay = `📂 ${entry.category || 'Kategorie'}`;
+            }
+
             html += `<tr class="${isCurrent ? 'row-highlight' : ''}">
                 <td>${idx + 1}</td>
                 <td>${entry.name}</td>
                 <td>${entry.score}</td>
+                <td>${modeDisplay}</td>
             </tr>`;
         });
         html += '</tbody></table>';
@@ -494,5 +529,5 @@ async function showHighscores() {
 }
 
 function restartGame() {
-    startGame();
+    startGame(gameMode, currentCategory);
 }
