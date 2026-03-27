@@ -41,6 +41,10 @@
                         🎲 Zufalls-Quizz
                         <span class="btn-arrow">→</span>
                     </button>
+                    <button id="btn-start-category" class="btn-secondary" onclick="showCategorySelection()">
+                        📂 Kategorie-Quizz
+                        <span class="btn-arrow">→</span>
+                    </button>
                     <button id="btn-highscore" class="btn-secondary" onclick="showHighscores()">
                         🏆 Highscore
                     </button>
@@ -135,6 +139,25 @@
                 <div class="loader-spinner">Lade Daten...</div>
             </div>
             <button class="btn-primary" onclick="showScreen(screenStart)">
+                ← Zurück
+            </button>
+        </div>
+    </div>
+
+    <!-- KATEGORIE-AUSWAHL-BILDSCHIRM -->
+    <div id="screen-category-selection" class="screen">
+        <div class="card category-card">
+            <div class="logo">📂</div>
+            <h2>Kategorie wählen</h2>
+            <p class="subtitle">Wähle eine Kategorie für dein Quizz</p>
+            <div class="category-grid">
+                <button class="btn-category" onclick="selectCategory('Geschichte')">📜 Geschichte</button>
+                <button class="btn-category" onclick="selectCategory('Naturwissenschaften')">🧪 Naturwissenschaften</button>
+                <button class="btn-category" onclick="selectCategory('Kunst & Kultur')">🎨 Kunst & Kultur</button>
+                <button class="btn-category" onclick="selectCategory('Essen & Trinken')">🍕 Essen & Trinken</button>
+                <button class="btn-category" onclick="selectCategory('Sport')">⚽ Sport</button>
+            </div>
+            <button class="btn-secondary" onclick="showScreen(screenStart)" style="margin-top: 20px;">
                 ← Zurück
             </button>
         </div>

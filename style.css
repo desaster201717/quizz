@@ -284,6 +284,36 @@ body {
     transform: translateX(4px);
 }
 
+/* --- Category Selection --- */
+.category-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.btn-category {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--text);
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(12px);
+}
+
+.btn-category:hover {
+    background: var(--surface-hover);
+    border-color: var(--accent-light);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px var(--accent-glow);
+}
+
 /* ============ GAME SCREEN ============ */
 .game-wrapper {
     width: 100%;
